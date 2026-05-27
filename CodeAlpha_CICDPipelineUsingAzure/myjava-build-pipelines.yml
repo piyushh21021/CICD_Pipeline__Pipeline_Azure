@@ -1,0 +1,49 @@
+trigger:
+- master
+
+resources:
+- repo: self
+
+variables:
+  # Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: '10755b7c-2dbc-4a2b-a89e-c65cffce018f'
+  imageRepository: 'myjavapp'
+  containerRegistry: 'javappcontainerregstry.azurecr.io'
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
+  tag: 'latest'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+
+steps:
+- task: JavaToolInstaller@1
+  inputs:
+    versionSpec: '17'
+    jdkArchitectureOption: 'x64'
+    jdkSourceOption: 'PreInstalled'
+
+- task: Maven@4
+  inputs:
+    azureSubscription: 'Azure subscription 1 (2dee7ddc-0ea0-42b8-bb8b-8e9cbf483738)'
+    mavenPomFile: 'pom.xml'
+    goals: 'clean package'
+    publishJUnitResults: false
+    javaHomeOption: 'JDKVersion'
+    mavenVersionOption: 'Default'
+    mavenAuthenticateFeed: false
+    effectivePomSkip: false
+    sonarQubeRunAnalysis: false
+
+- task: Docker@2
+  inputs:
+    containerRegistry: 'javappcontainerregstry'
+    repository: 'myappjava'
+    command: 'buildAndPush'
+    Dockerfile: './Dockerfile'
+    tags: 'latest'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: './target'
+    ArtifactName: 'javappartifact'
+    publishLocation: 'Container'
